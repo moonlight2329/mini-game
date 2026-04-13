@@ -8,7 +8,7 @@ st.title("🎮 Mini Game Hub")
 # ================= MENU =================
 game = st.sidebar.selectbox(
     "Choose a game",
-    ["Tic Tac Toe", "Number Guessing", "Rock Paper Scissors"]
+    ["Tic Tac Toe", "Number Guessing", "Rock Paper Scissors", "Hangry Snake"]
 )
 
 # ================= TIC TAC TOE =================
@@ -148,10 +148,96 @@ def run_rps():
         else:
             st.error("AI wins!")
 
+# =============================HANGRY SNAKE============================
+GRID_SIZE = 10
+
+def run_snake():
+    st.header("🐍 Snake Game")
+
+    # Initialize state
+    if "snake" not in st.session_state:
+        st.session_state.snake = [(5, 5)]
+        st.session_state.food = (random.randint(0, 9), random.randint(0, 9))
+        st.session_state.direction = (0, 1)
+        st.session_state.snake_score = 0
+        st.session_state.snake_game_over = False
+
+    def move_snake():
+        if st.session_state.snake_game_over:
+            return
+
+        head = st.session_state.snake[0]
+        dx, dy = st.session_state.direction
+        new_head = (head[0] + dx, head[1] + dy)
+
+        # Wall collision
+        if not (0 <= new_head[0] < GRID_SIZE and 0 <= new_head[1] < GRID_SIZE):
+            st.session_state.snake_game_over = True
+            return
+
+        # Self collision
+        if new_head in st.session_state.snake:
+            st.session_state.snake_game_over = True
+            return
+
+        st.session_state.snake.insert(0, new_head)
+
+        # Food
+        if new_head == st.session_state.food:
+            st.session_state.snake_score += 1
+            st.session_state.food = (random.randint(0, 9), random.randint(0, 9))
+        else:
+            st.session_state.snake.pop()
+
+    def draw_grid():
+        grid = [["⬜" for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+
+        fx, fy = st.session_state.food
+        grid[fx][fy] = "🍎"
+
+        for x, y in st.session_state.snake:
+            grid[x][y] = "🟩"
+
+        for row in grid:
+            st.write("".join(row))
+
+    # UI
+    st.write(f"Score: {st.session_state.snake_score}")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("⬅️", key="left"):
+            st.session_state.direction = (0, -1)
+    with col2:
+        if st.button("⬆️", key="up"):
+            st.session_state.direction = (-1, 0)
+    with col3:
+        if st.button("➡️", key="right"):
+            st.session_state.direction = (0, 1)
+
+    if st.button("⬇️", key="down"):
+        st.session_state.direction = (1, 0)
+
+    if st.button("Move"):
+        move_snake()
+
+    draw_grid()
+
+    if st.session_state.snake_game_over:
+        st.error("💀 Game Over!")
+
+    if st.button("Restart Snake"):
+        for key in ["snake", "food", "direction", "snake_score", "snake_game_over"]:
+            if key in st.session_state:
+                del st.session_state[key]
+
+
 # ================= ROUTER =================
 if game == "Tic Tac Toe":
     run_tic_tac_toe()
 elif game == "Number Guessing":
     run_number_guessing()
-else:
+elif game == "Rock Paper Scissors":
     run_rps()
+else:
+    run_snake()
